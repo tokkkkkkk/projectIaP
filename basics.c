@@ -13,7 +13,8 @@ typedef struct{
 typedef struct{
     char nome;
     int vite;
-    
+    Carta coperta;
+    Carta scoperta:
 }
 
 
