@@ -25,7 +25,6 @@ typedef struct{
 typedef struct{
     int vite_in_campo;
 }campo;
-dio
 
 
 int main(){
