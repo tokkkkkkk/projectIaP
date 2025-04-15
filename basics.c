@@ -8,23 +8,24 @@ typedef struct{
     Seme seme;
     int valore;
     int stato;
-}carte;
+}Carta;
 
 typedef struct{
     char nome[20];
     int vite;
     Carta coperta;
-    Carta scoperta:
+    Carta scoperta;
 }giocatore;
 
 typedef struct{
-    carte carte[40];
+    Carta carte[40];
     size_t index;    
 }mazzo;
 
 typedef struct{
     int vite_in_campo;
 }campo;
+dio
 
 
 int main(){
