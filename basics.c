@@ -11,15 +11,26 @@ typedef struct{
 }carte;
 
 typedef struct{
-    char nome;
+    char nome[20];
     int vite;
     Carta coperta;
     Carta scoperta:
-}
+}giocatore;
 
+typedef struct{
+    carte carte[40];
+    size_t index;    
+}mazzo;
 
+typedef struct{
+    int vite_in_campo;
+}campo;
 
 
 int main(){
+    size_t num_giocatori=0;
+    printf("Numero Giocatori:");
+    scanf("%zu", &num_giocatori);
+    
     
 }
