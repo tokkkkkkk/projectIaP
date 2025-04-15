@@ -17,7 +17,6 @@ typedef struct{
     Carta scoperta:
 }
 
-campe gay ma ricky ancor di piu
 
 
 
