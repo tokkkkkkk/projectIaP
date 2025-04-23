@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +46,7 @@ void create_deck(mazzo *mazzo)
         for (size_t j = 0; j < 10; j++)
         {
             mazzo->carte[i * 10 + j].seme = i;
+            mazzo->carte[i * 10 + j].stato = 0;
             switch (j)
             {
             case 9:
@@ -93,13 +95,15 @@ void mix_deck(mazzo *deck)
     deck->index = 0;
 }
 
-void assign_card(mazzo deck, giocatore giocatori[], size_t num_giocatori)
+void assign_card(mazzo *deck, giocatore giocatori[], size_t num_giocatori)
 {
     int j = 0;
     for (size_t i = 0; i < num_giocatori * 2; i++)
     {
-        giocatori[j].coperta = deck.carte[i++];
-        giocatori[j].scoperta = deck.carte[i];
+        giocatori[j].coperta = deck->carte[i++];
+        giocatori[j].coperta.stato = 0; // Face down card
+        giocatori[j].scoperta = deck->carte[i];
+        giocatori[j].scoperta.stato = 1; // Face up card
         j++;
     }
 }
@@ -113,44 +117,45 @@ void create_match(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
         giocatori[i].vite = 2;
     }
     campo->vite_in_campo = 0;
-    create_deck(&deck);
-    mix_deck(&deck);
-    srand((unsigned int)time(NULL));
+    create_deck(deck);
     campo->first_player = rand() % num_giocatori;
 }
 
 // phase part
-void manage_effect(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
+void manage_effect(giocatore giocatori[], size_t num_giocatori, campo *campo, Carta carta)
 {
+    
 }
 
 void manage_phase(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
 {
+    mix_deck(deck);
+    assign_card(deck, giocatori, num_giocatori);
     for (size_t i = 0; i < num_giocatori; i++)
     {
         // risolvere effetto carta scoperta
-        manage_effect(giocatori, num_giocatori, &campo, &deck);
+        manage_effect(giocatori, num_giocatori, campo, deck);
         // gestire carta coperta
         if (giocatori[i].coperta.stato == 0)
         {
-            char scelta;
-            printf("Vuoi scopare (tua madre) la carta?(Rispondi con si o no)");
-            scanf("%s", scelta);
             int c;
             do
             {
+                char scelta;
+                printf("Vuoi scoprire la carta?(Rispondi con s o n)\n");
+                scanf(" %c", &scelta);
                 c = 0;
                 switch (scelta)
                 {
                 case 's':
-                    manage_effect(giocatori, num_giocatori, &campo, &deck);
+                    manage_effect(giocatori, num_giocatori, campo, deck);
                     break;
                 case 'n':
-
+                    // end turn
                     break;
 
                 default:
-                    printf("scelta errata");
+                    printf("scelta errata\n");
                     c = 1;
                     break;
                 }
@@ -168,4 +173,5 @@ int main()
     campo match_campo;
     mazzo deck;
     create_match(giocatori, num_giocatori, &match_campo, &deck);
+    manage_phase(giocatori, num_giocatori, &match_campo, &deck);
 }
