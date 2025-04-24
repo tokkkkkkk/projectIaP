@@ -1,9 +1,9 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <stdbool.h>
 
 typedef enum
 {
@@ -63,8 +63,8 @@ void create_deck(mazzo *mazzo)
                 mazzo->carte[i * 10 + j].valore = '0' + j + 1;
                 break;
             }
-            printf("%c", mazzo->carte[i * 10 + j].valore);
-            printf(" di %s\n", (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[mazzo->carte[i * 10 + j].seme]);
+            // printf("%c", mazzo->carte[i * 10 + j].valore);
+            // printf(" di %s\n", (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[mazzo->carte[i * 10 + j].seme]);
         }
     }
 }
@@ -122,9 +122,90 @@ void create_match(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
 }
 
 // phase part
-void manage_effect(giocatore giocatori[], size_t num_giocatori, campo *campo, Carta carta)
+
+void print_field(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
 {
-    
+    printf("Vite nel campo: %d\n", campo->vite_in_campo);
+    for (size_t i = 0; i < num_giocatori; i++)
+    {
+        printf("Vite giocatore %s: %d\n", giocatori[i].nome, giocatori[i].vite);
+        printf("Carta scoperta: %c di %s\n",
+               giocatori[i].scoperta.valore,
+               (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[giocatori[i].scoperta.seme]);
+
+        if (giocatori[i].coperta.stato)
+        {
+            printf("Carta coperta: %c di %s\n",
+                   giocatori[i].coperta.valore,
+                   (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[giocatori[i].coperta.seme]);
+        }
+        printf("\n");
+    }
+}
+
+void check_hp(giocatore giocatori[], size_t *num_giocatori, size_t index)
+{
+    if (giocatori[index].vite == 0)
+    {
+        printf("Giocatore %s è morto\n", giocatori[index].nome);
+
+        // Save the player to remove
+        giocatore removed = giocatori[index];
+
+        // Shift all elements after index one position to the left
+        for (size_t i = index; i < (*num_giocatori - 1); i++)
+        {
+            giocatori[i] = giocatori[i + 1];
+        }
+
+        // Place the removed player at the end
+        giocatori[*num_giocatori - 1] = removed;
+
+        // Decrement the count of active players
+        (*num_giocatori)--;
+    }
+}
+
+void manage_effect(giocatore giocatori[], size_t *num_giocatori, campo *campo, int index, Carta carta)
+{
+    bool ultimo = false;
+    if (index == (*num_giocatori) - 1)
+    {
+        ultimo = true;
+    }
+
+    switch (carta.valore)
+    {
+    case '1':
+        giocatori[index].vite -= 1;
+        campo->vite_in_campo += 1;
+        break;
+    case '7':
+        if (ultimo)
+            index = -1;
+        if (giocatori[index + 1].coperta.stato == 0)
+        {
+            giocatori[index + 1].coperta.stato = 1;
+            manage_effect(giocatori, num_giocatori, campo, index + 1, giocatori[index + 1].coperta);
+        }
+        else
+        {
+            printf("carta già scoperta");
+        }
+        break;
+    case 'J':
+        giocatori[index].vite -= 1;
+        giocatori[index - 1].vite += 1;
+        break;
+    case 'Q':
+
+        break;
+    case 'K':
+        /* code */
+        break;
+    default:
+        break;
+    }
 }
 
 void manage_phase(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
@@ -133,8 +214,10 @@ void manage_phase(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
     assign_card(deck, giocatori, num_giocatori);
     for (size_t i = 0; i < num_giocatori; i++)
     {
+        print_field(giocatori, num_giocatori, campo, deck);
         // risolvere effetto carta scoperta
-        manage_effect(giocatori, num_giocatori, campo, deck);
+        printf("Risolvi effetto carta scoperta maledetto cancaro");
+        manage_effect(giocatori, &num_giocatori, campo, i, giocatori[i].scoperta);
         // gestire carta coperta
         if (giocatori[i].coperta.stato == 0)
         {
@@ -142,13 +225,14 @@ void manage_phase(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
             do
             {
                 char scelta;
-                printf("Vuoi scoprire la carta?(Rispondi con s o n)\n");
+                printf("Vuoi scoprire la carta?(s/n)\n");
                 scanf(" %c", &scelta);
                 c = 0;
                 switch (scelta)
                 {
                 case 's':
-                    manage_effect(giocatori, num_giocatori, campo, deck);
+                    giocatori[i].coperta.stato = 1;
+                    manage_effect(giocatori, &num_giocatori, campo, i, giocatori[i].coperta);
                     break;
                 case 'n':
                     // end turn
@@ -161,6 +245,7 @@ void manage_phase(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
                 }
             } while (c == 1);
         }
+        check_hp(giocatori, &num_giocatori, i);//maybe sbagliato
     }
 }
 
