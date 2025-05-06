@@ -78,35 +78,33 @@ void create_deck(mazzo *mazzo)
                 mazzo->carte[i * 10 + j].valore = '0' + j + 1;
                 break;
             }
-            // printf("%c", mazzo->carte[i * 10 + j].valore);
-            // printf(" di %s\n", (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[mazzo->carte[i * 10 + j].seme]);
         }
     }
 }
 
 /*
-Seeds the random number generator with the current time
-Iterates through the deck from the last card to the first
-For each card, selects a random position from the beginning up to the current position
-Swaps the current card with the randomly selected one
-Resets the deck's index to 0 so cards can be drawn from the beginning
+imposta il generatore di numeri casuali con l'ora corrente
+Scorre il mazzo dall'ultima carta alla prima
+Per ogni carta, seleziona una posizione casuale dall'inizio fino alla posizione corrente
+Scambia la carta corrente con quella selezionata casualmente
+Reimposta l'indice del mazzo a 0 in modo che le carte possano essere pescate dall'inizio
 */
 void mix_deck(mazzo *deck)
 {
-    // Fisher-Yates shuffle algorithm
-    srand((unsigned int)time(NULL)); // Seed the random number generator
+    // algoritmo di Fisher-Yates per il mescolamento
+    srand((unsigned int)time(NULL)); // imposta il generatore di numeri casuali
 
     for (size_t i = 39; i > 0; i--)
     {
-        // Generate a random index between 0 and i (inclusive)
+        // Genera un indice casuale tra 0 e i (inclusi)
         size_t j = rand() % (i + 1);
 
-        // Swap cards at positions i and j
+        //Scambia le carte nelle posizioni i e j
         Carta temp = deck->carte[i];
         deck->carte[i] = deck->carte[j];
         deck->carte[j] = temp;
     }
-    // Reset the deck index to start drawing from the beginning
+    // Reimposta l'indice del mazzo per iniziare a distribuire le carte dall'inizio
     deck->index = 0;
 }
 
@@ -116,9 +114,9 @@ void assign_card(mazzo *deck, giocatore giocatori[], size_t num_giocatori)
     for (size_t i = 0; i < num_giocatori * 2; i++)
     {
         giocatori[j].coperta = deck->carte[i++];
-        giocatori[j].coperta.stato = 0; // Face down card
+        giocatori[j].coperta.stato = 0; // carta coperta
         giocatori[j].scoperta = deck->carte[i];
-        giocatori[j].scoperta.stato = 1; // Face up card
+        giocatori[j].scoperta.stato = 1; // carta scoperta
         j++;
     }
 }
@@ -127,7 +125,7 @@ void create_match(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
 {
     for (size_t i = 0; i < num_giocatori; i++)
     {
-        printf("\nNome Giocatore %zu:", i + 1);
+        printf("\n Nome Giocatore %zu:", i + 1);
         scanf("%s", giocatori[i].nome);
         giocatori[i].vite = 2;
     }
@@ -136,63 +134,82 @@ void create_match(giocatore giocatori[], size_t num_giocatori, campo *campo, maz
     campo->first_player = rand() % num_giocatori;
 }
 
-// phase part
+// gestione delle fasi di gioco
 
 void print_field(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
 {
-    printf("\nVite nel campo: %d\n", campo->vite_in_campo);
+    printf("\n----------------------------------------\n");
+    printf("\n Vite nel campo: %d\n", campo->vite_in_campo);
+    printf("\n----------------------------------------\n");
     for (size_t i = 0; i < num_giocatori; i++)
     {
-        printf("Vite giocatore %s: %d\n", giocatori[i].nome, giocatori[i].vite);
-        printf("Carta scoperta: %c di %s\n",
+        printf("\n **Giocatore**: %s\n", giocatori[i].nome);
+        printf(" Vite: %d\n", giocatori[i].vite);
+        printf(" Carta scoperta: %c di %s\n",
                giocatori[i].scoperta.valore,
                (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[giocatori[i].scoperta.seme]);
 
         if (giocatori[i].coperta.stato)
-            printf("Carta coperta: %c di %s\n",
+            printf(" Carta coperta: %c di %s\n",
                    giocatori[i].coperta.valore,
                    (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[giocatori[i].coperta.seme]);
         printf("\n");
+        printf("----------------------------------------\n");
         delay_ms(2500);
     }
     printf("\n");
 }
 
-void check_hp(giocatore giocatori[], size_t *num_giocatori, size_t index)
+void remove_player(giocatore giocatori[], size_t *num_giocatori, size_t index)
 {
     if (giocatori[index].vite == 0)
     {
-        printf("Giocatore %s è morto\n", giocatori[index].nome);
+        printf(" **Giocatore %s è morto!**\n", giocatori[index].nome);
 
-        // Save the player to remove
+        // salva il giocatore da rimuovere
         giocatore removed = giocatori[index];
 
-        // Shift all elements after index one position to the left
+        // Sposta tutti gli elementi dopo l'indice di una posizione a sinistra
         for (size_t i = index; i < (*num_giocatori - 1); i++)
         {
             giocatori[i] = giocatori[i + 1];
         }
 
-        // Place the removed player at the end
+        // posiziona il giocatore da rimuovere alla fine
         giocatori[*num_giocatori - 1] = removed;
 
-        // Decrement the count of active players
+        // decrementa il numero di giocatori in gioco
         (*num_giocatori)--;
+        printf(" Il giocatore è stato rimosso dal gioco.\n");
     }
+}
+
+bool is_alive(giocatore g)
+{
+    return g.vite > 0;
 }
 
 bool warning_hp(giocatore giocatori[], size_t *num_giocatori, size_t index)
 {
-    char scelta;
+    char scelta = 's';
     if (giocatori[index].vite == 1)
     {
-        printf("\nQuesta azione azzererà le tue vite, vuoi continuare? [s/n]");
+        printf("\n Questa azione azzererà le tue vite, vuoi continuare? [s/n]");
         scanf(" %c", &scelta);
     }
     if (scelta == 's')
         return true;
 
     return false;
+}
+
+bool warning_hp_reveal(giocatore giocatori[], size_t index, Carta carta) {
+    char scelta = 's';
+    if (giocatori[index].vite == 1 && carta.stato == 0) {
+        printf("\n Questa azione azzererà le tue vite, vuoi continuare? [s/n]");
+        scanf(" %c", &scelta);
+    }
+    return scelta == 's';
 }
 
 void manage_effect(giocatore giocatori[], size_t *num_giocatori, campo *campo, int index, Carta carta)
@@ -202,28 +219,61 @@ void manage_effect(giocatore giocatori[], size_t *num_giocatori, campo *campo, i
     {
         ultimo = true;
     }
+    if (!is_alive(giocatori[index]))
+        return;
+
+    printf("\n Risolvendo l'effetto della carta: %c di %s\n", carta.valore,
+           (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[carta.seme]);
 
     switch (carta.valore)
     {
     case '1':
-        giocatori[index].vite -= 1;
-        campo->vite_in_campo += 1;
-        printf("\neffetto 1");
+    {
+
+        if (carta.stato == 0)
+        {
+            bool scelta = warning_hp_reveal(giocatori, index, carta);
+            if (scelta)
+            {
+                giocatori[index].vite -= 1;
+                campo->vite_in_campo += 1;
+            }
+            else
+            {
+                printf("\n Azione annullata. La carta non è stata rivelata.\n");
+                return;
+            }
+        }
+        else
+        {
+            giocatori[index].vite -= 1;
+            campo->vite_in_campo += 1;
+        }
+        printf("\n----------------------------------------");
+        printf(" \nEffetto 1 attivato: il giocatore perde 1 vita.\n");
+        printf("----------------------------------------\n");
+
         break;
+    }
     case '7':
+    {
         if (ultimo)
             index = -1;
         if (giocatori[index + 1].coperta.stato == 0)
         {
             giocatori[index + 1].coperta.stato = 1;
             manage_effect(giocatori, num_giocatori, campo, index + 1, giocatori[index + 1].coperta);
+        printf("\n----------------------------------------");
+            printf("\n Effetto 7 attivato: la carta coperta del prossimo giocatore è stata scoperta.\n");
+        printf("----------------------------------------\n");
+
         }
         else
         {
-            printf("\ncarta già  scoperta");
+            printf("\n carta già  scoperta");
         }
-        printf("\neffetto 7");
         break;
+    }
     case 'J':
     {
         int target_index = (index == 0) ? (*num_giocatori - 1) : (index - 1);
@@ -235,15 +285,23 @@ void manage_effect(giocatore giocatori[], size_t *num_giocatori, campo *campo, i
             {
                 giocatori[index].vite -= 1;
                 giocatori[target_index].vite += 1;
+        printf("\n----------------------------------------");
+                printf("\n Effetto J attivato: trasferimento di vite tra il giocatore %s e %s.\n", giocatori[index].nome, giocatori[target_index].nome);
+        printf("----------------------------------------\n");
+
             }
         }
         else
         {
             giocatori[index].vite -= 1;
             giocatori[target_index].vite += 1;
+        printf("\n----------------------------------------");
+            printf("\n Effetto J attivato: trasferimento di vite tra il giocatore %s e %s.\n", giocatori[index].nome, giocatori[target_index].nome);
+        printf("----------------------------------------\n");
+
         }
-        check_hp(giocatori, num_giocatori, index);
-        printf("\neffetto j");
+        remove_player(giocatori, num_giocatori, index);
+
         break;
     }
     case 'Q':
@@ -271,82 +329,144 @@ void manage_effect(giocatore giocatori[], size_t *num_giocatori, campo *campo, i
             giocatori[index].vite -= 1;
             giocatori[target_index].vite += 1;
         }
-        check_hp(giocatori, num_giocatori, index);
-        printf("\neffetto q");
+        remove_player(giocatori, num_giocatori, index);
+        printf("\n----------------------------------------");
+        printf(" \nEffetto Q attivato: trasferimento di vite tra il giocatore %s e %s.\n", giocatori[index].nome, giocatori[target_index].nome);
+        printf("----------------------------------------\n");
+
         break;
     }
     case 'K':
     {
         giocatori[index].vite += campo->vite_in_campo;
-        printf("\nhai guardagnato %d vite", campo->vite_in_campo);
+        printf("\n----------------------------------------");
+        printf(" \nEffetto K attivato: il giocatore %s guadagna %d vite.\n", giocatori[index].nome, campo->vite_in_campo);
+        printf("----------------------------------------\n");
+
         campo->vite_in_campo = 0;
         break;
     }
     default:
-        printf("\nla tua carta non ha efftti");
+    {
+        printf("\n----------------------------------------");
+        printf("\n Carta senza effetto speciale.\n");
+        printf("----------------------------------------\n");
+
         break;
+    }
     }
 }
 
-void manage_phase(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
+void manage_phase(giocatore giocatori[], size_t *num_giocatori, campo *campo, mazzo *deck)
 {
     bool esci = false;
     mix_deck(deck);
-    assign_card(deck, giocatori, num_giocatori);
+    assign_card(deck, giocatori, *num_giocatori);
     int i = campo->first_player;
-    for (size_t index = 0; index < num_giocatori; index++)
+
+    // usa *num_giocatori per accedere al valore effettivo 
+    for (size_t index = 0; index < *num_giocatori; index++)
     {
-        print_field(giocatori, num_giocatori, campo, deck);
-        // risolvere effetto carta scoperta
-        printf("\n è il turno di %s", giocatori[i].nome);
+        print_field(giocatori, *num_giocatori, campo, deck);
+        // risolve effetto carta scoperta
+        printf("\n==========================\n");
+        printf("  E' IL TURNO DI %s\n", giocatori[i].nome);
+        printf("==========================\n");
 
-        printf("\n %s Risolvi effetto carta scopzerta, maledetto cancaro!", giocatori[i].nome);
-        manage_effect(giocatori, &num_giocatori, campo, i, giocatori[i].scoperta);
-        // gestire carta coperta
-        if (giocatori[i].coperta.stato == 0)
+        printf("\n **Risolvi l'effetto della carta scoperta** di %s:\n", giocatori[i].nome);
+        manage_effect(giocatori, num_giocatori, campo, i, giocatori[i].scoperta);
+
+        remove_player(giocatori, num_giocatori, i);
+        // Controlla se il numero di giocatori è cambiato dopo manage_effect (a causa dell'eliminazione del giocatore)
+        if (index >= *num_giocatori)
+            break;
+        if (giocatori[i].vite > 0 && giocatori[i].coperta.stato == 0)
         {
-            int c;
-            do
+            // gestire carta coperta
+            if (giocatori[i].coperta.stato == 0)
             {
-                char scelta;
-                printf("\nla tua carta coperta: %c di %s\n",
-                       giocatori[i].coperta.valore,
-                       (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[giocatori[i].coperta.seme]);
-
-                printf("\nVuoi scoprire la carta?(s/n)\n");
-                scanf(" %c", &scelta);
-                c = 0;
-                switch (scelta)
+                int c;
+                do
                 {
-                case 's':
-                    giocatori[i].coperta.stato = 1;
-                    manage_effect(giocatori, &num_giocatori, campo, i, giocatori[i].coperta);
-                    break;
-                case 'n':
-                    // end turn
-                    break;
-                default:
-                    printf("\nscelta errata\n");
-                    c = 1;
-                    break;
-                }
-            } while (c == 1);
+                    char scelta;
+                    printf("\n La tua carta coperta: %c di %s\n",
+                           giocatori[i].coperta.valore,
+                           (const char *[]){"Picche", "Fiori", "Cuori", "Quadri"}[giocatori[i].coperta.seme]);
+
+                    printf("\n Vuoi scoprire la carta?(s/n)\n");
+                    scanf(" %c", &scelta);
+                    c = 0;
+                    switch (scelta)
+                    {
+                    case 's':
+                        giocatori[i].coperta.stato = 1;
+                        printf(" **Carta scoperta**: l'effetto della carta verrà risolto subito.\n");
+                        manage_effect(giocatori, num_giocatori, campo, i, giocatori[i].coperta);
+                        break;
+                    case 'n':
+                        // fine turno
+                        printf(" **Carta non scoperta**: il turno termina.\n");
+                        break;
+                    default:
+                        printf("\n Scelta errata. Per favore, rispondi con 's' per scoprire o 'n' per non scoprire.\n");
+                        c = 1;
+                        break;
+                    }
+                } while (c == 1);
+            }
         }
-        check_hp(giocatori, &num_giocatori, i); // maybe sbagliato
+        remove_player(giocatori, num_giocatori, i);
+
+        // controlla se il numero giocatori è cambiato
+        if (index >= *num_giocatori)
+            break;
+
         i++;
-        if (i == num_giocatori)
+        if (i >= *num_giocatori)
             i = 0;
     }
+
+    // aggiorna il primo giocatore per la prossima fase
+    campo->first_player = i;
+}
+
+// turno
+void manage_game(giocatore giocatori[], size_t num_giocatori, campo *campo, mazzo *deck)
+{
+    while (num_giocatori != 1)
+    {
+        printf("\n==========================\n");
+        printf(" INIZIO FASE DI GIOCO\n");
+        printf("==========================\n");
+
+        manage_phase(giocatori, &num_giocatori, campo, deck);
+        printf("\n==========================");
+        printf("\n Fine turno\n");
+        printf("==========================\n");
+    }
+    printf("\n **Fine del gioco!** \n");
+    printf("==========================\n");
+    printf(" **%s  HA VINTO!** \n", giocatori[0].nome);
+    printf("==========================\n");
+
 }
 
 int main()
 {
     size_t num_giocatori = 0;
-    printf("Numero Giocatori:");
+    printf(" Numero Giocatori:");
     scanf("%zu", &num_giocatori);
-    giocatore giocatori[num_giocatori];
+    giocatore *giocatori = (giocatore *)malloc(num_giocatori * sizeof(giocatore));
+    if (giocatori == NULL)
+    {
+        fprintf(stderr, " Errore: memoria insufficiente\n");
+        return 1;
+    }
     campo match_campo;
     mazzo deck;
     create_match(giocatori, num_giocatori, &match_campo, &deck);
-    manage_phase(giocatori, num_giocatori, &match_campo, &deck);
+    manage_game(giocatori, num_giocatori, &match_campo, &deck);
+
+    free(giocatori);
+    return 0;
 }
