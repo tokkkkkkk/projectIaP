@@ -453,10 +453,18 @@ void manage_game(giocatore giocatori[], size_t num_giocatori, campo *campo, mazz
 
 int main()
 {
+    bool correct = false;
     size_t num_giocatori = 0;
-    printf(" Numero Giocatori:");
-    scanf("%zu", &num_giocatori);
-    giocatore *giocatori = (giocatore *)malloc(num_giocatori * sizeof(giocatore));
+    while (!correct)
+    {
+        printf(" Numero Giocatori:");
+        scanf("%zu", &num_giocatori);
+        if (num_giocatori > 1 && num_giocatori <= 20)
+            correct = true;
+        else
+            printf("Please enter a number between 2 and 20.\n");
+    }
+    giocatore giocatori = (giocatore)malloc(num_giocatori * sizeof(giocatore));
     if (giocatori == NULL)
     {
         fprintf(stderr, " Errore: memoria insufficiente\n");
